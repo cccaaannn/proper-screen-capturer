@@ -41,7 +41,7 @@ public class capture_frame extends JFrame implements ActionListener, KeyListener
 	static Color black = new Color(0,0,0);
 	static Color green = new Color(108,254,0);
 	static Color blue = new Color(0,150,255);
-	static Color red = new Color(255,0,0);
+	static Color red = new Color(255,0,50);
 
 	Color background_color = light_black;
 	Color foreground_color = white;
@@ -344,6 +344,7 @@ public class capture_frame extends JFrame implements ActionListener, KeyListener
 
 
 
+
 	String check_dir_for_existing_screenshoots(String theDir) {
 
 		String file_type = file_formats_combobox.getSelectedItem().toString();
@@ -500,6 +501,8 @@ public class capture_frame extends JFrame implements ActionListener, KeyListener
 		info_label.setForeground(blue);
 		info_label.setText("x1:"+first_point_x+"y1:"+first_point_y+" x2:"+original_second_point_x+"y2:"+original_second_point_y);
 
+
+		
 	}
 
 	
@@ -528,9 +531,11 @@ public class capture_frame extends JFrame implements ActionListener, KeyListener
 		//info button, html for bold and dots
 		String msg = "<html><ul><li>For taking ss use the back quote key (\") or the button.<br/><br/>"
 				+ "<li>For displaying the area that will be captured press SHIFT key.<br/><br/>"
-				+ "<li>For manual sized ss, place the mouse pointer to the TOP LEFT corner of the rectangle that you want <br/><br/>"
+				+ "<li>For manual sized ss with keys, place the mouse pointer to the TOP LEFT corner of the rectangle that you want <br/>"
 				+ "and press or hold 'a' from keyboard to save the position and press or hold 's' for the BOTTOM RIGHT corner of the rectangle.<br/><br/>"
-				+ "<li>You can also lock the coordinates to prevent changing them by accident using lock coordinates button.<br/><br/>"
+				+ "<li>For manual sized ss with mouse, click the TOP LEF corner of the rectangle that you want, <br/>"
+				+ "and drag until you reach the BOTTOM RIGHT corner of the rectangle and release the pointer. <br/><br/>"
+				+ "<li>You can also toggle mouse or keyboard usage for manual sizing to prevent changing them by accident.<br/><br/>"
 				+ "<li>Author: <b>Can Kurt.</b></ul></html>";
 
 		JLabel label = new JLabel(msg);
