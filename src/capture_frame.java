@@ -668,7 +668,7 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 				+ "and press or hold 'a' from keyboard to save the position and press or hold 's' for the BOTTOM RIGHT corner of the rectangle.<br/><br/>"
 				+ "<li>For manual sized ss with mouse, click the TOP LEF corner of the rectangle that you want, <br/>"
 				+ "and drag until you reach the BOTTOM RIGHT corner of the rectangle and release the pointer. <br/><br/>"
-				+ "<li>You can also toggle mouse or keyboard usage for manual sizing to prevent changing them by accident.<br/><br/>"
+				+ "<li>You can also toggle mouse or keyboard usage for manual sizing to prevent changing coordinates by accident.<br/><br/>"
 				+ "<li>Author: <b>Can Kurt.</b></ul></html>";
 
 		JLabel label = new JLabel(msg);
