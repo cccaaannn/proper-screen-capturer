@@ -37,7 +37,7 @@ import org.jnativehook.mouse.NativeMouseEvent;
 import org.jnativehook.mouse.NativeMouseInputListener;
 import org.jnativehook.mouse.NativeMouseListener;
 
-public class capture_frame extends JFrame implements ActionListener, MouseListener, NativeKeyListener, NativeMouseInputListener  {
+public class capture_frame extends JFrame implements ActionListener, MouseListener, NativeKeyListener, NativeMouseListener {
 
 	//color
 	static Color white = new Color(255,255,255);
@@ -80,8 +80,8 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 	//labels
 	static JLabel info_label = new JLabel();
 
-	
-	
+
+
 
 	//creating ss area
 	JFrame ss_area = new JFrame();
@@ -93,8 +93,7 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 	//this is for disabling position records with mouse clicks when pointer is on the frame
 	boolean is_pointer_on_frame = false;
 
-	//executorService is for real time frame drawing to be timed well
-	final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+
 
 
 
@@ -108,16 +107,16 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 		super("proper ss capturer");
 
 		create_frame();
+
+		native_key_and_mouse_listener();
+		create_ss_area_frame();
+		move_frame();
 		
 		buttons();
 		comboboxes();
 		radiobuttons();
 		checkbox();
 		labels();
-		
-		native_key_and_mouse_listener();
-		create_ss_area_frame();
-		move_frame();
 	}
 
 
@@ -286,7 +285,7 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 		show_shade.addActionListener(this);
 		show_shade.addMouseListener(this);
 	}
-	
+
 	//---------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -368,7 +367,7 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 
 
 
-	
+
 	/*
 	 * creates and returns ss directories location as string called screenshoots_psc or only returns if it exits
 	 * location is determined by dir combobox
@@ -444,7 +443,7 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 	//----------------------------------display second frame to show the ss are----------------------------------------------------------
 
 
-	
+
 	/*
 	 * creates ss area
 	 * ss area is the area that shows the area that will be captured by the program
@@ -459,8 +458,9 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 		ss_area.setVisible(false);
 		ss_area.setAlwaysOnTop(true);
 
-		//this is for detecting if mouse exits the frame both of the frames uses same mouselistener
-		ss_area.addMouseListener(this);
+
+		//no mouse listener for this frame because you cant resize it if you are on the frame and it stuck
+		//ss_area.addMouseListener(this);
 	}
 
 
@@ -501,7 +501,7 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 	int original_second_point_y = 0;
 
 
-	
+
 	/*
 	 * creating rectangle from mouse coordinates:
 	 * 
@@ -545,15 +545,13 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 	 * if caller is mouse check also pointers location
 	 * if caller is keyboard not check it 
 	 * 
-	 * also if caller is mouse executorService is used to prevent extra redrawings of the frame
-	 * 
 	 * 
 	 * this function is called by global mouse click function or global key listener function to save second coordinates of the rectangle
-	 * also function calls update_ss_area to update ss area real time
+	 * or executive service calls it when native mouse listener triggers it function calls update_ss_area to update ss area real time
 	 */
 
 	void record_second_position(String position_caller) {
-		
+
 		if(manual_selection_radiobutton.isSelected() && position_caller.equals("keyboard")) {
 
 			PointerInfo a = MouseInfo.getPointerInfo();
@@ -589,19 +587,38 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 			print_mouse_coordinates_label();
 			update_ss_area();
 
-
-			//100 miliseconds redraw timer
-			executorService.scheduleAtFixedRate(new Runnable() {
-
-				public void run() {
-					update_ss_area();
-				}
-
-			}, 0, 100, TimeUnit.MILLISECONDS);
 		}
+	}	
 
+
+	//for stoping executive service
+	boolean stop = false;
+	/*
+	 * draws ss frame on screen real time with using  executive services separate thread 
+	 * every time creates a new instance of the executive service because it cant be paused
+	 * 
+	 * if stop value is true stops the service stop value is controled by native mouse listeners if mouse is released stop value becomes true 
+	 * so service stops
+	 */
+	void start_drawing_ss_area_real_time() {
+
+		//executorService is for real time frame drawing to be timed well
+		ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+
+		executorService.scheduleAtFixedRate(new Runnable() {
+
+			public void run() {
+				if(stop) {
+					executorService.shutdownNow();
+				}
+				record_second_position("mouse");
+
+			}
+
+		}, 0, 50, TimeUnit.MILLISECONDS);
 
 	}
+
 
 
 	/*
@@ -637,8 +654,12 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 	/*
 	 * joptionpane for information
 	 * html used for better look 
+	 * 
+	 * function makes ss area not always on top so joptionpane can be on top of it after joptionpane opened makes ss area always on top again 
 	 */
 	void show_info() {
+
+		ss_area.setAlwaysOnTop(false);
 
 		//info button, html for bold and dots
 		String msg = "<html><ul><li>For taking ss use the back quote key (\") or the button.<br/><br/>"
@@ -655,6 +676,7 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 
 		JOptionPane.showMessageDialog(null, label ,"Info", JOptionPane.INFORMATION_MESSAGE);
 
+		ss_area.setAlwaysOnTop(true);
 
 	}
 
@@ -708,7 +730,7 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 
 		GlobalScreen.addNativeMouseListener(this);
 
-		GlobalScreen.addNativeMouseMotionListener(this);
+		//GlobalScreen.addNativeMouseMotionListener(this);
 
 		Logger logger = Logger.getLogger(GlobalScreen.class.getPackage().getName());
 		logger.setLevel(Level.OFF);
@@ -822,11 +844,11 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 	}
 
 
-	
-	
 
 
-	
+
+
+
 	@Override
 	public void mousePressed(MouseEvent arg0) {
 		// TODO Auto-generated method stub
@@ -881,7 +903,7 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 
 
 
-	
+
 	@Override
 	public void nativeKeyReleased(NativeKeyEvent arg0) {
 		// TODO Auto-generated method stub
@@ -901,60 +923,44 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 	}
 
 
-	
-	
+
+
 
 	/*
 	 * (non-Javadoc)
 	 * @see org.jnativehook.mouse.NativeMouseListener#nativeMousePressed(org.jnativehook.mouse.NativeMouseEvent)
 	 *
 	 * record first positions on click if use mouse is selected
+	 * 
+	 * and start the executive service that draws ss area real time
 	 */
 
 	@Override
 	public void nativeMousePressed(NativeMouseEvent arg0) {
 
-		if(use_mouse.isSelected()) { 
+		if(use_mouse.isSelected() && manual_selection_radiobutton.isSelected()) { 
+			stop=false;
 			record_first_position("mouse");
+			start_drawing_ss_area_real_time();
 		}
 
 
 	}
-
-
-
-	@Override
-	public void nativeMouseReleased(NativeMouseEvent arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-
 
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.jnativehook.mouse.NativeMouseMotionListener#nativeMouseDragged(org.jnativehook.mouse.NativeMouseEvent)
-	 *
-	 *keep updating position real time while draging
+	 * @see org.jnativehook.mouse.NativeMouseListener#nativeMouseReleased(org.jnativehook.mouse.NativeMouseEvent)
+	 * 
+	 * stops executive service that runs real time frame drawing
 	 */
-
 	@Override
-	public void nativeMouseDragged(NativeMouseEvent arg0) {
-		if(use_mouse.isSelected()) { 
-			record_second_position("mouse");
+	public void nativeMouseReleased(NativeMouseEvent arg0) {
+		if(use_mouse.isSelected() && manual_selection_radiobutton.isSelected()) { 
+			stop = true;
 		}
-
 	}
 
-
-
-	
-	@Override
-	public void nativeMouseMoved(NativeMouseEvent arg0) {
-		// TODO Auto-generated method stub
-
-	}
 
 
 
