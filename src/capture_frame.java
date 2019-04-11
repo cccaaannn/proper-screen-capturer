@@ -1,68 +1,51 @@
 import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
 import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.PointerInfo;
 import java.awt.Rectangle;
-import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.image.BufferedImage;
-import java.io.File;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.filechooser.FileSystemView;
-
 import org.jnativehook.GlobalScreen;
 import org.jnativehook.NativeHookException;
 import org.jnativehook.keyboard.NativeKeyEvent;
 import org.jnativehook.keyboard.NativeKeyListener;
 import org.jnativehook.mouse.NativeMouseEvent;
-import org.jnativehook.mouse.NativeMouseInputListener;
 import org.jnativehook.mouse.NativeMouseListener;
 
-public class capture_frame extends JFrame implements ActionListener, MouseListener, NativeKeyListener, NativeMouseListener {
+public class capture_frame extends JFrame implements ActionListener, ItemListener, MouseListener, NativeKeyListener, NativeMouseListener {
 
 	//color
-	static Color white = new Color(255,255,255);
-	static Color light_black = new Color(61,61,61);
-	static Color black = new Color(0,0,0);
-	static Color green = new Color(108,254,0);
-	static Color blue = new Color(0,150,255);
-	static Color red = new Color(255,0,50);
+	Colors colors = new Colors();
 
-	Color background_color = light_black;
-	Color foreground_color = white;
+	public final Color background_color = Colors.light_black;
+	public final Color foreground_color = Colors.white;
 
 
 	//buttons
-	JButton exit =  new JButton(new ImageIcon(this.getClass().getResource(("delete-icon.png"))));
+	JButton exit =  new JButton(new ImageIcon(getClass().getResource(("delete-icon.png"))));
 	JButton info =  new JButton(new ImageIcon(getClass().getResource(("Button-Info-icon.png"))));
 	JButton minimize =  new JButton(new ImageIcon(getClass().getResource(("math-minus-icon.png"))));
 	JButton shoot =  new JButton(new ImageIcon(getClass().getResource(("qr  scanner.png"))));
 
 	//comboboxes
-	String []file_formats = new String[] {"png","JPG","bmp"};
-	JComboBox<String> file_formats_combobox = new JComboBox<String>(file_formats);
+	static String []file_formats = new String[] {"png","JPG","bmp"};
+	static JComboBox<String> file_formats_combobox = new JComboBox<String>(file_formats);
 
-	String []dirs = new String[] {"root","desktop"};
-	JComboBox<String> dirs_combobox = new JComboBox<String>(dirs);
+	static String []dirs = new String[] {"root","desktop"};
+	static JComboBox<String> dirs_combobox = new JComboBox<String>(dirs);
 
 	//radiobutton
 	JRadioButton full_secreen_radiobutton = new JRadioButton("full screen");
@@ -73,10 +56,10 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 
 
 	//checkboxes
-	JCheckBox use_mouse = new JCheckBox("use mouse");
-	JCheckBox use_keys = new JCheckBox("use keys");
-	JCheckBox show_shade = new JCheckBox("show shade");
-
+	static JCheckBox use_mouse = new JCheckBox("use mouse");
+	static JCheckBox use_keys = new JCheckBox("use keys");
+	static JCheckBox show_shade = new JCheckBox("show shade");
+	static JCheckBox hide_frame = new JCheckBox("");
 	//labels
 	static JLabel info_label = new JLabel();
 
@@ -84,14 +67,20 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 
 
 	//creating ss area
-	JFrame ss_area = new JFrame();
+	SS_Area ss_area = new SS_Area();
+
+	//instantiating SS_Taker
+	SS_Taker ss_taker = new SS_Taker();
+
+	//
+	Coordinate_Handler coordinate_handler = new Coordinate_Handler(); 
 
 	//move frame
 	int pX,pY;
 
 	//is pointer on frame 
 	//this is for disabling position records with mouse clicks when pointer is on the frame
-	boolean is_pointer_on_frame = false;
+	static boolean is_pointer_on_frame = false;
 
 
 
@@ -108,15 +97,16 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 
 		create_frame();
 
-		native_key_and_mouse_listener();
-		create_ss_area_frame();
-		move_frame();
 		
+		move_frame();
+
 		buttons();
 		comboboxes();
 		radiobuttons();
 		checkbox();
 		labels();
+		
+		native_key_and_mouse_listener();
 	}
 
 
@@ -126,7 +116,7 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 	 * sets colors size etc.
 	 */
 	void create_frame() {
-		setSize(355,120);
+		setSize(360,120);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setResizable(false);
 		setUndecorated(true);
@@ -142,9 +132,8 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 	}
 
 
-
-
 	//--------------------------------------------gui elements-----------------------------------------------------------------
+
 
 	/*
 	 * combbox options
@@ -154,7 +143,7 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 		file_formats_combobox.setBounds(10,20,100,25);
 		file_formats_combobox.setFont(new Font("arial",Font.BOLD,15));
 		file_formats_combobox.setBackground(background_color);
-		file_formats_combobox.setForeground(white);
+		file_formats_combobox.setForeground(Colors.white);
 		file_formats_combobox.setFocusable(false);
 		file_formats_combobox.setSelectedIndex(0);
 		file_formats_combobox.addMouseListener(this);
@@ -164,7 +153,7 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 		dirs_combobox.setBounds(10,50,100,25);
 		dirs_combobox.setFont(new Font("arial",Font.BOLD,15));
 		dirs_combobox.setBackground(background_color);
-		dirs_combobox.setForeground(white);
+		dirs_combobox.setForeground(Colors.white);
 		dirs_combobox.setFocusable(false);
 		dirs_combobox.setSelectedIndex(1);
 		file_formats_combobox.addMouseListener(this);
@@ -177,7 +166,7 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 	void buttons() {
 
 		add(exit);
-		exit.setBounds(330,2,17,17);
+		exit.setBounds(335,2,17,17);
 		exit.addActionListener(this);		
 		exit.setFocusable(false);
 		exit.setContentAreaFilled(false);
@@ -185,7 +174,7 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 		exit.addMouseListener(this);
 
 		add(minimize);
-		minimize.setBounds(305,2,17,17);
+		minimize.setBounds(310,2,17,17);
 		minimize.addActionListener(this);		
 		minimize.setFocusable(false);
 		minimize.setContentAreaFilled(false);
@@ -193,7 +182,7 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 		minimize.addMouseListener(this);
 
 		add(info);
-		info.setBounds(280,2,17,17);
+		info.setBounds(285,2,17,17);
 		info.addActionListener(this);		
 		info.setFocusable(false);
 		info.setContentAreaFilled(false);
@@ -201,7 +190,7 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 		info.addMouseListener(this);
 
 		add(shoot);
-		shoot.setBounds(295,25,50,50);
+		shoot.setBounds(300,25,50,50);
 		shoot.addActionListener(this);		
 		shoot.setFocusable(false);
 		shoot.setContentAreaFilled(false);
@@ -209,19 +198,19 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 		shoot.addMouseListener(this);
 	}
 
+
 	/*
 	 * info label options
 	 */
 	void labels() {
 		add(info_label);
-		info_label.setBounds(10,80,335,35);
+		info_label.setBounds(10,80,340,35);
 		info_label.setFont(new Font("arial",Font.BOLD,20));
-		info_label.setForeground(blue);
+		info_label.setForeground(Colors.blue);
 		info_label.setText("proper ss capturer");
 		info_label.setHorizontalAlignment(SwingConstants.CENTER);
 		//info_label.addMouseListener(this);
 	}
-
 
 
 	/*
@@ -231,18 +220,18 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 		add(full_secreen_radiobutton);
 		full_secreen_radiobutton.setBounds(115,20,89,20);
 		full_secreen_radiobutton.setBackground(background_color);
-		full_secreen_radiobutton.setForeground(white);
+		full_secreen_radiobutton.setForeground(Colors.white);
 		full_secreen_radiobutton.setActionCommand("1");
-		full_secreen_radiobutton.addActionListener(this);
+		full_secreen_radiobutton.addItemListener(this);
 		full_secreen_radiobutton.setFocusable(false);
 		full_secreen_radiobutton.addMouseListener(this);
 
 		add(manual_selection_radiobutton);
 		manual_selection_radiobutton.setBounds(115,55,70,20);
 		manual_selection_radiobutton.setBackground(background_color);
-		manual_selection_radiobutton.setForeground(white);
+		manual_selection_radiobutton.setForeground(Colors.white);
 		manual_selection_radiobutton.setActionCommand("2");
-		manual_selection_radiobutton.addActionListener(this);
+		manual_selection_radiobutton.addItemListener(this);
 		manual_selection_radiobutton.setFocusable(false);
 		manual_selection_radiobutton.addMouseListener(this);
 
@@ -260,30 +249,45 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 		add(use_keys);
 		use_keys.setBounds(200,17,90,20);
 		use_keys.setBackground(background_color);
-		use_keys.setForeground(white);
+		use_keys.setForeground(Colors.white);
 		use_keys.setFocusable(false);
-		use_keys.setSelected(true);
+		use_keys.setSelected(false);
 		use_keys.setEnabled(false);
 		use_keys.addMouseListener(this);
 
 		add(use_mouse);
 		use_mouse.setBounds(200,40,90,20);
 		use_mouse.setBackground(background_color);
-		use_mouse.setForeground(white);
+		use_mouse.setForeground(Colors.white);
 		use_mouse.setFocusable(false);
 		use_mouse.setSelected(true);
 		use_mouse.setEnabled(false);
 		use_mouse.addMouseListener(this);
+		use_mouse.addItemListener(this);
 
 		add(show_shade);
 		show_shade.setBounds(200,63,92,20);
 		show_shade.setBackground(background_color);
-		show_shade.setForeground(white);
+		show_shade.setForeground(Colors.white);
 		show_shade.setFocusable(false);
 		show_shade.setSelected(true);
 		show_shade.setEnabled(false);
-		show_shade.addActionListener(this);
+		show_shade.addItemListener(this);
 		show_shade.addMouseListener(this);
+		
+		
+		/*
+		 * invisible checkbox for making frame invisible from ss_area frame
+		 * since it can't be accessed from ss_area frame
+		 */
+		add(hide_frame);
+		hide_frame.setBounds(0,0,0,0);
+		hide_frame.setFocusable(false);
+		hide_frame.setSelected(false);
+		hide_frame.setEnabled(false);
+		hide_frame.addItemListener(this);
+	
+		
 	}
 
 	//---------------------------------------------------------------------------------------------------------------------------------------------
@@ -293,46 +297,34 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 
 
 
-	//--------------------------------------------ss capture and create file functions-------------------------------------------------------------
-
+	//--------------------------------------------ss capture------------------------------------------------------------------
 
 	/*
-	 * tries to soot an ss and saves it
-	 * 
-	 * how it works:
-	 * 1-calls create_screenshoots_dir function to ensure that dir is exits
-	 * 2-calls check_dir_for_existing_screenshoots to name the ss that taken
-	 * 3-takes file format from file_formats_combobox 
-	 * 4-makes ss area invisible if it is visible
-	 * 5-gets ss size by looking at the radiobuttons
-	 * 6-tries to shoot ss via robot class also uses informations from all the functions above to save the file
-	 * 7-updates label as image name and saved if ss is succeeded or if ss failed updates label to show error
-	 * 8-makes ss area visible again if it was visible
+	 * uses selected options and ss_taker class to take a screenshot
+	 * 1-gets dir from combobox
+	 * 2-gets type from combobx
+	 * 3-gets size from points or if selected full screen
+	 * 4-makes ss_area invisible if it is visible
+	 * 5-makes frame invisible
+	 * 6-calls shoot_and_save_ss from ss taker and send requered parameters to it
+	 * 7-makes frame visible
+	 * 8-makes ss_area visible if it was visible
 	 * 
 	 */
 	void shoot_ss() {
 
-		//get or create and get dir
-		String theDir = create_screenshoots_dir();
+		//get save directory from dirs combobox
+		String save_dir = dirs_combobox.getSelectedItem().toString();
 
-		//generate possible name
-		String filename = check_dir_for_existing_screenshoots(theDir);
-
-		//get file type
+		//get file type from file types combobox
 		String file_type = file_formats_combobox.getSelectedItem().toString();
 
 
-		//make ss area invisible before ss if it is visible 
-		if(show_shade.isSelected()) {
-			ss_area.setVisible(false);
-		}
 
-
-
+		//decide ss size via radiobuttons
 		Rectangle screenRect = new Rectangle(0,0,0,0);
 
-		//capture selection form radio buttons
-		//first option is full screen
+		//first option is fullscreen
 		if(full_secreen_radiobutton.isSelected()) {
 			screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
 		}
@@ -342,193 +334,71 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 		}
 
 
-		//try to shoot the ss
-		try {
-			BufferedImage capture = new Robot().createScreenCapture(screenRect);
-			ImageIO.write(capture, file_type, new File(theDir + File.separator + filename + "." + file_type));
-
-			info_label.setForeground(green);
-			info_label.setText(filename + "." + file_type + " saved");
+		//make ss area invisible before ss if it is visible 
+		if(show_shade.isSelected()) {
+			ss_area.setVisible(false);
 		}
-		catch (Exception e) {
-			System.out.println("shoot error");
 
-			info_label.setForeground(red);
-			info_label.setText("something went wrong");
-		}
+
+		//make main frame invisible
+		setVisible(false);
+
+
+		//try to take ss via ss_taker class
+		String ss_name = ss_taker.shoot_and_save_ss(save_dir, file_type, screenRect);
+
+
+		//set info label on the ss_area as the image name 
+		ss_area.info_label_top.setText(ss_name);
+
+		//make main frame visible
+		setVisible(true);
 
 
 		//if ss area was visible before make it visible again
-		if(show_shade.isSelected()) {
+		if(show_shade.isSelected() && manual_selection_radiobutton.isSelected()) {
 			ss_area.setVisible(true);
 		}
 
 	}
 
 
-
-
-	/*
-	 * creates and returns ss directories location as string called screenshoots_psc or only returns if it exits
-	 * location is determined by dir combobox
-	 */
-	String create_screenshoots_dir() {
-
-		//default creating point is root of the program
-		File theDir = new File("screenshoots_psc");
-
-
-		//if desktop selected create file to desktop
-		if(dirs_combobox.getSelectedIndex() == 1) {
-
-			FileSystemView filesys = FileSystemView.getFileSystemView();
-			File[] roots = filesys.getRoots();
-			//System.out.println("home dir found: " + filesys.getHomeDirectory());
-			theDir = new File(filesys.getHomeDirectory() + File.separator + "screenshoots_psc");
-		}
-
-
-		// if the directory does not exist, create it
-		if (!theDir.exists()) {
-			System.out.println("creating directory: " + theDir.getName());
-			try{
-				theDir.mkdir();
-				System.out.println("DIR created"); 
-			} 
-			catch(SecurityException se){
-				System.out.println("DIR is not created"); 
-			}        
-		}
-
-		return theDir.toString();
-	}
-
-
-
-
-	/*
-	 * checks the directory given as parameter for deciding the name of the ss
-	 * returns ss name as string
-	 */
-	String check_dir_for_existing_screenshoots(String theDir) {
-
-		String file_type = file_formats_combobox.getSelectedItem().toString();
-
-		int counter = 0;
-
-		//loop until a possible ss file name
-		while(true) {
-
-			//directory + basefilename + counter + filetype from combobox 
-			File file = new File(theDir + File.separator + "ss" + counter + "." + file_type);
-			if(!file.exists()) { 
-				return "ss" + counter;
-			}
-			else {
-				counter++;
-			}
-
-		}
-	}
-
-
 	//-------------------------------------------------------------------------------------------------------------------------
 
 
 
 
 
-
-
-	//----------------------------------display second frame to show the ss are----------------------------------------------------------
-
-
-
-	/*
-	 * creates ss area
-	 * ss area is the area that shows the area that will be captured by the program
-	 */
-	void create_ss_area_frame() {
-		ss_area.setSize(Toolkit.getDefaultToolkit().getScreenSize());
-		ss_area.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		ss_area.getContentPane().setBackground(light_black);
-		ss_area.setResizable(false);
-		ss_area.setUndecorated(true);
-		ss_area.setOpacity(0.4f);
-		ss_area.setVisible(false);
-		ss_area.setAlwaysOnTop(true);
-
-
-		//no mouse listener for this frame because you cant resize it if you are on the frame and it stuck
-		//ss_area.addMouseListener(this);
-	}
-
-
-
-	/*
-	 * updates ss area
-	 * 
-	 * this function is called by mouse coordinate saving functions for making the area updates right after point updates
-	 */
-	void update_ss_area() {
-
-		if(manual_selection_radiobutton.isSelected() && show_shade.isSelected()) {
-			Rectangle ss_area_size = new Rectangle(first_point_x,first_point_y,second_point_x,second_point_y);
-			ss_area.setBounds(ss_area_size);
-
-		}
-
-	}
-
-
-	//-------------------------------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-	//----------------------------------mouse coordiates for manual selected area ss----------------------------------------------------------
+	//----------------------------------mouse coordinates for manual selected area ss----------------------------------------------------------
 
 
 	//mouse positions
-	int first_point_x = 0;
-	int	first_point_y = 0;
-	int	second_point_x = 0;
-	int	second_point_y = 0;
-	int original_second_point_x = 0;
-	int original_second_point_y = 0;
+	static int first_point_x = 0;
+	static int	first_point_y = 0;
+	static int	second_point_x = 0;
+	static int	second_point_y = 0;
+	static int original_second_point_x = 0;
+	static int original_second_point_y = 0;
 
 
 
 	/*
+	 * position caller is required because if user uses keyboard program should keep taking pointer location even if it enters frame
 	 * creating rectangle from mouse coordinates:
-	 * 
-	 * gets mouse coordinates for first points
-	 * 
-	 * original second points are cached and subtracted from first points to prevent wrong rectangle because of the point change
-	 * 
 	 * this function is called by global mouse click function or global key listener function to save first coordinates of the rectangle
 	 * also function calls update_ss_area to update ss area real time
 	 */
 	void record_first_position(String position_caller) {
-		//position caller is required because if user uses keyboard program should keep taking pointer location even if it enters frame
 		if(manual_selection_radiobutton.isSelected() && (!is_pointer_on_frame || position_caller.equals("keyboard"))) {
-			PointerInfo a = MouseInfo.getPointerInfo();
-			Point b = a.getLocation();
-			Integer x = (int) b.getX();
-			Integer y = (int) b.getY();
 
-			first_point_x = x;
-			first_point_y = y;
+			//set coordinates
+			coordinate_handler.set_coordinates_of_first_pints();
 
-			second_point_x = original_second_point_x - first_point_x;
-			second_point_y = original_second_point_y - first_point_y;
-
-			//print_mouse_coordinates_console();
+			//update label
 			print_mouse_coordinates_label();
-			update_ss_area();
+
+			//update area
+			ss_area.update_ss_area();
 		}
 
 	}
@@ -537,65 +407,53 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 
 	/*
 	 * creating rectangle from mouse coordinates:
-	 * 
-	 * gets mouse coordinates for second points
-	 * second points are bottom right of the rectangle and values are subtracted from first values because of the rectangles function 
-	 * 
-	 * position_caller parameter is required to prevent changing coordinates by accident 
+	 * position_caller parameter is required to prevent position change while pointer is on the frame by accident 
 	 * if caller is mouse check also pointers location
 	 * if caller is keyboard not check it 
 	 * 
-	 * 
 	 * this function is called by global mouse click function or global key listener function to save second coordinates of the rectangle
-	 * or executive service calls it when native mouse listener triggers it function calls update_ss_area to update ss area real time
+	 * or executive service calls it when native mouse listener triggers it
+	 * 
+	 * function calls update_ss_area to update ss area real time
 	 */
 
 	void record_second_position(String position_caller) {
 
+		//second coordinates for keyboard
 		if(manual_selection_radiobutton.isSelected() && position_caller.equals("keyboard")) {
 
-			PointerInfo a = MouseInfo.getPointerInfo();
-			Point b = a.getLocation();
-			Integer x = (int) b.getX();
-			Integer y = (int) b.getY();
+			//set coordinates
+			coordinate_handler.set_coordinates_of_second_pints();
 
-			original_second_point_x = x;
-			original_second_point_y = y;
-
-			second_point_x = original_second_point_x - first_point_x;
-			second_point_y = original_second_point_y - first_point_y;
-
-			//print_mouse_coordinates_console();
+			//update label
 			print_mouse_coordinates_label();
-			update_ss_area();
+
+			//update area
+			ss_area.update_ss_area();
 		}	
 
+		//second coordinates for mouse
 		if(manual_selection_radiobutton.isSelected() && !is_pointer_on_frame && position_caller.equals("mouse")) {
 
-			PointerInfo a = MouseInfo.getPointerInfo();
-			Point b = a.getLocation();
-			Integer x = (int) b.getX();
-			Integer y = (int) b.getY();
+			//set coordinates
+			coordinate_handler.set_coordinates_of_second_pints();
 
-			original_second_point_x = x;
-			original_second_point_y = y;
-
-			second_point_x = original_second_point_x - first_point_x;
-			second_point_y = original_second_point_y - first_point_y;
-
-			//print_mouse_coordinates_console();
+			//update label
 			print_mouse_coordinates_label();
-			update_ss_area();
+
+			//update area
+			ss_area.update_ss_area();
 
 		}
 	}	
 
 
 	//for stoping executive service
-	boolean stop = false;
+	boolean stop_drawing_ss_area_real_time = false;
 	/*
-	 * draws ss frame on screen real time with using  executive services separate thread 
-	 * every time creates a new instance of the executive service because it cant be paused
+	 * draws ss frame on screen real time with using executive services separate thread 
+	 * executive service needed because we have to control redrawing speed of the frame if it is too fast it causes performance issues.
+	 * every time creates a new instance of the executive service because it can't be paused
 	 * 
 	 * if stop value is true stops the service stop value is controled by native mouse listeners if mouse is released stop value becomes true 
 	 * so service stops
@@ -608,7 +466,7 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 		executorService.scheduleAtFixedRate(new Runnable() {
 
 			public void run() {
-				if(stop) {
+				if(stop_drawing_ss_area_real_time) {
 					executorService.shutdownNow();
 				}
 				record_second_position("mouse");
@@ -620,23 +478,11 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 	}
 
 
-
-	/*
-	 * show coordinates on console
-	 */
-	void print_mouse_coordinates_console() {
-		System.out.print("first x: " + first_point_x);
-		System.out.println(" first y: " + first_point_y);
-
-		System.out.print("second x: " + second_point_x);
-		System.out.println(" second y: " + second_point_y);
-	}
-
 	/*
 	 * draw coordinates to the information label
 	 */
 	void print_mouse_coordinates_label() {
-		info_label.setForeground(blue);
+		info_label.setForeground(Colors.blue);
 		info_label.setText("x1:"+first_point_x+"y1:"+first_point_y+" x2:"+original_second_point_x+"y2:"+original_second_point_y);
 	}
 
@@ -652,10 +498,11 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 	//-------------------------------------------------other--------------------------------------------------------------------
 
 	/*
-	 * joptionpane for information
+	 * JOptionPane for information
 	 * html used for better look 
 	 * 
-	 * function makes ss area not always on top so joptionpane can be on top of it after joptionpane opened makes ss area always on top again 
+	 * function makes ss area not always on top so JOptionPane can be on top of it after JOptionPane opened 
+	 * makes ss area always on top again 
 	 */
 	void show_info() {
 
@@ -678,14 +525,6 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 
 		ss_area.setAlwaysOnTop(true);
 
-	}
-
-
-	/*
-	 * minimize frame
-	 */
-	void minimize_frame() {
-		setExtendedState(JFrame.ICONIFIED);
 	}
 
 
@@ -753,7 +592,7 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 	 * (non-Javadoc)
 	 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 	 * 
-	 * handle button preses 
+	 * handle button presses 
 	 */
 
 	@Override
@@ -766,12 +605,24 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 			show_info();
 		}
 		if(e.getSource() == minimize) {
-			minimize_frame();
+			setExtendedState(JFrame.ICONIFIED);
 		}
 		if(e.getSource() == shoot) {
 			shoot_ss();
 		}
 
+	}
+
+
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.awt.event.ItemListener#itemStateChanged(java.awt.event.ItemEvent)
+	 * 
+	 * item listener for radiobuttons and checkboxes
+	 */
+	@Override
+	public void itemStateChanged(ItemEvent e) {
 
 		if(e.getSource() == full_secreen_radiobutton) {
 
@@ -789,14 +640,17 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 			use_mouse.setEnabled(true);
 			show_shade.setEnabled(true);
 
-			//if radiobuton selected and ss area is visible change size on select
-			update_ss_area();
-			ss_area.setVisible(true);
+			//check for show shade checkbox for redrawing
+			if(show_shade.isSelected()) {
+				//if radiobuton selected and ss area is visible change size on select
+				ss_area.update_ss_area();
+				ss_area.setVisible(true);
+			}
 		}
 
 		if(e.getSource() == show_shade) {
 			if(show_shade.isSelected()) {
-				update_ss_area();
+				ss_area.update_ss_area();
 				ss_area.setVisible(true);
 			}
 			else {
@@ -804,8 +658,25 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 			}
 		}
 
+		if(e.getSource() == use_mouse) {
+			ss_area.toggle_info_label_text();
+			ss_area.toggle_use_mouse_button_icon();
+		}
 
+		/*
+		 * invisible checkbox for making frame invisible from ss_area frame
+		 */
+		if(e.getSource() == hide_frame) {
+			if(hide_frame.isSelected()) {
+				setVisible(false);
+			}
+			else {
+				setVisible(true);
+			}
+		}
+		
 	}
+
 
 
 
@@ -937,13 +808,13 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 
 	@Override
 	public void nativeMousePressed(NativeMouseEvent arg0) {
-
-		if(use_mouse.isSelected() && manual_selection_radiobutton.isSelected()) { 
-			stop=false;
-			record_first_position("mouse");
-			start_drawing_ss_area_real_time();
+		if(arg0.getButton() == 1) {
+			if(use_mouse.isSelected() && manual_selection_radiobutton.isSelected()) { 
+				stop_drawing_ss_area_real_time=false;
+				record_first_position("mouse");
+				start_drawing_ss_area_real_time();
+			}
 		}
-
 
 	}
 
@@ -956,11 +827,12 @@ public class capture_frame extends JFrame implements ActionListener, MouseListen
 	 */
 	@Override
 	public void nativeMouseReleased(NativeMouseEvent arg0) {
-		if(use_mouse.isSelected() && manual_selection_radiobutton.isSelected()) { 
-			stop = true;
+		if(arg0.getButton() == 1) {
+			if(use_mouse.isSelected() && manual_selection_radiobutton.isSelected()) { 
+				stop_drawing_ss_area_real_time = true;
+			}
 		}
 	}
-
 
 
 
