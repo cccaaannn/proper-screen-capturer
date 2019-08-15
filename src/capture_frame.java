@@ -72,7 +72,7 @@ public class capture_frame extends JFrame implements ActionListener, ItemListene
 	//instantiating SS_Taker
 	SS_Taker ss_taker = new SS_Taker();
 
-	//
+	//instantiating Coordinate_Handler
 	Coordinate_Handler coordinate_handler = new Coordinate_Handler(); 
 
 	//move frame
@@ -374,9 +374,9 @@ public class capture_frame extends JFrame implements ActionListener, ItemListene
 
 	//mouse positions
 	static int first_point_x = 0;
-	static int	first_point_y = 0;
-	static int	second_point_x = 0;
-	static int	second_point_y = 0;
+	static int first_point_y = 0;
+	static int second_point_x = 0;
+	static int second_point_y = 0;
 	static int original_second_point_x = 0;
 	static int original_second_point_y = 0;
 
