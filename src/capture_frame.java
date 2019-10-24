@@ -374,9 +374,9 @@ public class capture_frame extends JFrame implements ActionListener, ItemListene
 
 	//mouse positions
 	static int first_point_x = 0;
-	static int	first_point_y = 0;
-	static int	second_point_x = 0;
-	static int	second_point_y = 0;
+	static int first_point_y = 0;
+	static int second_point_x = 0;
+	static int second_point_y = 0;
 	static int original_second_point_x = 0;
 	static int original_second_point_y = 0;
 
